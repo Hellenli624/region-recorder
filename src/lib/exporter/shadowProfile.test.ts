@@ -18,7 +18,7 @@ describe("getWebcamShadowStrength", () => {
 		expect(getWebcamShadowFilter(100, 0)).toBe("none");
 		const filter = getWebcamShadowFilter(100, 0.5);
 		expect(filter.match(/drop-shadow/g)).toHaveLength(2);
-		expect(filter).toContain("rgba(0, 0, 0, 0.9)");
-		expect(filter).toContain("rgba(0, 0, 0, 0.8)");
+		expect(filter).toContain("rgba(136, 19, 55, 0.9)");
+		expect(filter).toContain("rgba(136, 19, 55, 0.8)");
 	});
 });

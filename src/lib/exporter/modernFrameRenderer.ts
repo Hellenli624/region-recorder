@@ -95,6 +95,7 @@ import {
 	getWebcamShadowStrength,
 	VIDEO_SHADOW_LAYER_PROFILES,
 	WEBCAM_SHADOW_LAYER_PROFILES,
+	WEBCAM_SHADOW_RGB,
 } from "./shadowProfile";
 import { buildTemporalSamplePlanUs, getTemporalMotionBlurConfig } from "./temporalMotionBlur";
 
@@ -775,6 +776,8 @@ export class FrameRenderer {
 			offsetY: number;
 			alpha: number;
 			blur: number;
+			/** RGB triplet; defaults to black so the video shadow keeps its color. */
+			color?: string;
 		},
 	): void {
 		if (options.alpha <= 0 || options.width <= 0 || options.height <= 0) {
@@ -797,7 +800,7 @@ export class FrameRenderer {
 		layer.context.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
 		layer.context.save();
 		layer.context.filter = options.blur > 0 ? `blur(${options.blur}px)` : "none";
-		layer.context.fillStyle = `rgba(0, 0, 0, ${options.alpha})`;
+		layer.context.fillStyle = `rgba(${options.color ?? "0, 0, 0"}, ${options.alpha})`;
 		drawSquircleOnCanvas(layer.context, {
 			x: padding,
 			y: padding + options.offsetY,
@@ -2585,6 +2588,7 @@ export class FrameRenderer {
 				offsetY,
 				alpha: layer.alphaScale * nextLayout.shadowStrength,
 				blur: Math.max(0, shadowSize * layer.blurScale * nextLayout.shadowStrength),
+				color: WEBCAM_SHADOW_RGB,
 			});
 		}
 
