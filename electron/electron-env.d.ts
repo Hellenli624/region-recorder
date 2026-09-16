@@ -217,6 +217,14 @@ interface Window {
 		switchToEditor: () => Promise<void>;
 		openSourceSelector: () => Promise<void>;
 		selectSource: (source: ProcessedDesktopSource) => Promise<ProcessedDesktopSource>;
+		pickCustomRegion: () => Promise<ProcessedDesktopSource | null>;
+		confirmCustomRegion: (region: {
+			x: number;
+			y: number;
+			width: number;
+			height: number;
+		}) => void;
+		cancelCustomRegion: () => void;
 		showSourceHighlight: (source: ProcessedDesktopSource) => Promise<{ success: boolean }>;
 		getSelectedSource: () => Promise<ProcessedDesktopSource | null>;
 		onSelectedSourceChanged: (
@@ -914,7 +922,14 @@ interface ProcessedDesktopSource {
 	thumbnail: string | null;
 	appIcon: string | null;
 	originalName?: string;
-	sourceType?: "screen" | "window";
+	sourceType?: "screen" | "window" | "custom-region";
+	baseSourceId?: string;
+	captureRegion?: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	};
 	appName?: string;
 	windowTitle?: string;
 }

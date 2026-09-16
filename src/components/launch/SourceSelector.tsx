@@ -144,6 +144,48 @@ export const SourceSelectorContent = ({
 							</div>
 						</div>
 					) : null}
+					<div className="mt-2 space-y-1 border-t border-white/10 pt-2">
+						<div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] source-selector-label">
+							{t("sourceSelector.customRegionSection", "Custom area")}
+						</div>
+						<button
+							type="button"
+							onClick={() => {
+								void (async () => {
+									const customRegion = await window.electronAPI.pickCustomRegion();
+									if (!customRegion) return;
+									onSourceSelect(mapRawSource(customRegion as DesktopSource));
+								})();
+							}}
+							className="source-selector-item group min-h-[46px] w-full rounded-[11px] px-3 py-2.5 text-left font-medium flex items-center justify-start gap-3"
+						>
+							<div className="source-selector-thumb-fallback w-12 h-8 rounded-[8px] flex items-center justify-center">
+								<svg
+									className="w-5 h-5 source-selector-muted"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								>
+									<path d="M4 8V6a2 2 0 0 1 2-2h2" strokeDasharray="0" />
+									<path d="M16 4h2a2 2 0 0 1 2 2v2" />
+									<path d="M20 16v2a2 2 0 0 1-2 2h-2" />
+									<path d="M8 20H6a2 2 0 0 1-2-2v-2" />
+									<rect x="8.5" y="8.5" width="7" height="7" rx="1.5" strokeDasharray="2 2" />
+								</svg>
+							</div>
+							<div className="flex-1 min-w-0 flex flex-col items-start text-left">
+								<div className="text-sm font-medium source-selector-text w-full">
+									{t("sourceSelector.customRegion", "Custom region")}
+								</div>
+								<div className="text-xs source-selector-subtle truncate w-full text-left">
+									{t("sourceSelector.customRegionHint", "Drag to select an area")}
+								</div>
+							</div>
+						</button>
+					</div>
 				</>
 			) : (
 				<div className="text-center py-8 text-sm source-selector-muted">

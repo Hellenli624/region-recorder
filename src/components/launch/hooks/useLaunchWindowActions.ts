@@ -11,6 +11,11 @@ export function useLaunchWindowActions() {
 		await window.electronAPI.selectSource(source);
 		setSelectedSource(source.name);
 		setHasSelectedSource(true);
+		if (source.sourceType === "custom-region") {
+			// The region was just drawn on screen, so flashing the whole source
+			// border would only add noise.
+			return;
+		}
 		window.electronAPI.showSourceHighlight?.({
 			...source,
 			name: source.appName ? `${source.appName} — ${source.name}` : source.name,

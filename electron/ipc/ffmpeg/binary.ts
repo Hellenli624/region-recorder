@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
+import path from "node:path";
 import { app } from "electron";
 
 const nodeRequire = createRequire(import.meta.url);
@@ -47,7 +48,39 @@ export function loadFfprobeStatic(): string | null {
 	return null;
 }
 
+/**
+ * Resolves an executable from PATH using Node's own environment strings.
+ * Parsing `where`/`which` output instead corrupts non-ASCII install paths on
+ * Windows because the console codepage is not UTF-8.
+ */
+function findBinaryOnPath(binaryName: string): string | null {
+	const pathValue = process.env.PATH ?? process.env.Path ?? "";
+	const separator = process.platform === "win32" ? ";" : ":";
+	const candidates = process.platform === "win32" ? [`${binaryName}.exe`, binaryName] : [binaryName];
+
+	for (const rawEntry of pathValue.split(separator)) {
+		const entry = rawEntry.trim().replace(/^"(.*)"$/, "$1");
+		if (!entry) {
+			continue;
+		}
+
+		for (const candidateName of candidates) {
+			const candidate = path.join(entry, candidateName);
+			if (existsSync(candidate)) {
+				return candidate;
+			}
+		}
+	}
+
+	return null;
+}
+
 export function resolveSystemFfmpegBinaryPath(): string | null {
+	const onPath = findBinaryOnPath("ffmpeg");
+	if (onPath) {
+		return onPath;
+	}
+
 	const locator = process.platform === "win32" ? "where" : "which";
 	const result = spawnSync(locator, ["ffmpeg"], {
 		encoding: "utf-8",
@@ -83,6 +116,11 @@ export function resolveSystemFfmpegBinaryPath(): string | null {
 }
 
 export function resolveSystemFfprobeBinaryPath(): string | null {
+	const onPath = findBinaryOnPath("ffprobe");
+	if (onPath) {
+		return onPath;
+	}
+
 	const locator = process.platform === "win32" ? "where" : "which";
 	const result = spawnSync(locator, ["ffprobe"], {
 		encoding: "utf-8",

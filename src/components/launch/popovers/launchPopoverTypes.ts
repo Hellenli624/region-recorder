@@ -4,7 +4,13 @@ export interface DesktopSource {
 	thumbnail: string | null;
 	display_id: string;
 	appIcon: string | null;
-	sourceType?: "screen" | "window";
+	sourceType?: "screen" | "window" | "custom-region";
+	captureRegion?: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	};
 	appName?: string;
 	windowTitle?: string;
 }
@@ -24,7 +30,10 @@ export function isWindowSource(s: DesktopSource): boolean {
 }
 
 export function mapRawSource(s: DesktopSource): DesktopSource {
-	const isWindow = isWindowSource(s);
+	// A custom region keeps its base window id, but its name is what identifies
+	// the selection in the HUD, so it must not be replaced by the window title.
+	const isCustomRegion = s.sourceType === "custom-region";
+	const isWindow = !isCustomRegion && isWindowSource(s);
 	const type = s.sourceType ?? (isWindow ? "window" : "screen");
 	let displayName = s.name;
 	let appName = s.appName;
@@ -44,6 +53,7 @@ export function mapRawSource(s: DesktopSource): DesktopSource {
 		sourceType: type,
 		appName,
 		windowTitle: s.windowTitle ?? displayName,
+		captureRegion: s.captureRegion,
 	};
 }
 

@@ -9,6 +9,7 @@ import type {
 	SystemCursorAsset,
 	WindowBounds,
 } from "./types";
+import type { CaptureRegion } from "./recording/regionCrop";
 
 // ── Source selection ──────────────────────────────────────────────────────────
 export let selectedSource: SelectedSource | null = null;
@@ -46,6 +47,14 @@ export let windowsSystemAudioPath: string | null = null;
 export let windowsMicAudioPath: string | null = null;
 export let windowsOrphanedMicAudioPath: string | null = null;
 export let windowsPendingVideoPath: string | null = null;
+
+// Region selected for the recording that is currently in flight. Captured at
+// start time so a later source change cannot reshape an already running take.
+export let pendingRegionCrop: CaptureRegion | null = null;
+
+export function setPendingRegionCrop(v: CaptureRegion | null) {
+	pendingRegionCrop = v;
+}
 
 // ── Diagnostics ───────────────────────────────────────────────────────────────
 export let lastNativeCaptureDiagnostics: NativeCaptureDiagnostics | null = null;

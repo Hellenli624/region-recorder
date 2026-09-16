@@ -488,6 +488,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	selectSource: (source: ProcessedDesktopSource) => {
 		return ipcRenderer.invoke("select-source", source);
 	},
+	pickCustomRegion: () => {
+		return ipcRenderer.invoke("pick-custom-region");
+	},
+	confirmCustomRegion: (region: { x: number; y: number; width: number; height: number }) => {
+		ipcRenderer.send("confirm-custom-region", region);
+	},
+	cancelCustomRegion: () => {
+		ipcRenderer.send("cancel-custom-region");
+	},
 	showSourceHighlight: (source: ProcessedDesktopSource) => {
 		return ipcRenderer.invoke("show-source-highlight", source);
 	},

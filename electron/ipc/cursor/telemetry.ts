@@ -164,6 +164,22 @@ export function getCursorCaptureElapsedMs(nowMs = Date.now()) {
 	);
 }
 
+/**
+ * A custom region recording is cropped to the selected rectangle, so cursor
+ * coordinates are re-based onto that rectangle instead of the whole source.
+ */
+function applyCaptureRegionToNormalizedPoint(point: { cx: number; cy: number }) {
+	const region = selectedSource?.captureRegion;
+	if (!region || region.width <= 0 || region.height <= 0) {
+		return point;
+	}
+
+	return {
+		cx: clamp((point.cx - region.x) / region.width, 0, 1),
+		cy: clamp((point.cy - region.y) / region.height, 0, 1),
+	};
+}
+
 export function getNormalizedCursorPoint() {
 	const fallbackCursor = getScreen().getCursorScreenPoint();
 	const linuxCursorCache = process.platform === "linux" ? linuxCursorScreenPoint : null;
@@ -188,10 +204,10 @@ export function getNormalizedCursorPoint() {
 		const width = Math.max(1, windowBounds.width / sf);
 		const height = Math.max(1, windowBounds.height / sf);
 
-		return {
+		return applyCaptureRegionToNormalizedPoint({
 			cx: clamp((cursor.x - windowBounds.x / sf) / width, 0, 1),
 			cy: clamp((cursor.y - windowBounds.y / sf) / height, 0, 1),
-		};
+		});
 	}
 
 	const sourceDisplayId = Number(selectedSource?.display_id);
@@ -207,7 +223,7 @@ export function getNormalizedCursorPoint() {
 
 	const cx = clamp((cursor.x - bounds.x) / width, 0, 1);
 	const cy = clamp((cursor.y - bounds.y) / height, 0, 1);
-	return { cx, cy };
+	return applyCaptureRegionToNormalizedPoint({ cx, cy });
 }
 
 export function getHookCursorScreenPoint(

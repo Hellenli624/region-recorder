@@ -155,6 +155,11 @@ import {
 	parseWindowId,
 } from "../utils";
 import { resolveWindowsCaptureTarget } from "../windowsCaptureSelection";
+import {
+	applyPendingRegionCrop,
+	beginRegionCapture,
+	endRegionCapture,
+} from "../recording/regionSession";
 import { bringSelectedWindowForward } from "./sources";
 
 const execFileAsync = promisify(execFile);
@@ -407,6 +412,7 @@ export function registerRecordingHandlers(
 			// Capture starts before the renderer publishes its recording-state
 			// transition, so protect the HUD at the actual capture boundary.
 			reassertHudOverlayCaptureProtection();
+			beginRegionCapture(source);
 			const visibleWindowBounds = source.id?.startsWith("window:")
 				? await bringSelectedWindowForward(source)
 				: null;
@@ -994,6 +1000,9 @@ export function registerRecordingHandlers(
 							}
 						}
 					}
+					// Region recordings capture the base screen/window and crop
+					// afterwards, so the crop runs before validation and telemetry.
+					await applyPendingRegionCrop(finalVideoPath);
 					const validation = await validateRecordedVideo(finalVideoPath);
 
 					setWindowsCaptureProcess(null);
@@ -1037,9 +1046,11 @@ export function registerRecordingHandlers(
 						);
 					}
 
+					endRegionCapture();
 					return { success: true, path: finalVideoPath };
 				} catch (error) {
 					console.error("Failed to stop native Windows capture:", error);
+					endRegionCapture();
 					const fallbackPath = await resolveExistingPath(
 						windowsCaptureTargetPath,
 						stagedTempVideoPath,

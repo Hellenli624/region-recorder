@@ -10,6 +10,7 @@ import {
 	stopWindowBoundsCapture,
 } from "../cursor/bounds";
 import { getDisplayBoundsForSource, getDisplayWorkAreaForSource } from "../recording/ffmpeg";
+import { type PixelRect, sanitizeCaptureRegion } from "../recording/regionCrop";
 import { selectedSource, setSelectedSource } from "../state";
 import type { SelectedSource, WindowBounds } from "../types";
 import { getScreen, parseWindowId } from "../utils";
@@ -34,6 +35,92 @@ function broadcastSelectedSourceChange() {
 			window.webContents.send("selected-source-changed", selectedSource);
 		}
 	}
+}
+
+const CUSTOM_REGION_NAME_SUFFIX = " · Custom region";
+
+/**
+ * A custom region records its base screen/window first and crops afterwards, so
+ * it keeps the base source id. Resolving the base therefore only has to fall
+ * back to the primary display when nothing has been picked yet.
+ */
+function resolveRegionBaseSource(): SelectedSource {
+	const current = selectedSource;
+	if (current?.id?.startsWith("screen:") || current?.id?.startsWith("window:")) {
+		return current;
+	}
+
+	const primaryDisplay = getScreen().getPrimaryDisplay();
+	const displayId = String(primaryDisplay.id);
+	return {
+		id: getScreenSourceIdForDisplay({
+			displayId,
+			env: process.env,
+			matchedSourceId: null,
+			platform: process.platform,
+		}),
+		name: "Screen 1 (Primary)",
+		display_id: displayId,
+		sourceType: "screen",
+	};
+}
+
+async function resolveRegionBaseBounds(base: SelectedSource): Promise<WindowBounds> {
+	const fallback = getScreen().getPrimaryDisplay().bounds;
+
+	try {
+		let bounds: WindowBounds | null = null;
+		if (base.id?.startsWith("window:")) {
+			if (process.platform === "darwin") {
+				bounds = await resolveMacWindowBounds(base);
+			} else if (process.platform === "win32") {
+				bounds = await resolveWindowsWindowBounds(base);
+			} else {
+				bounds = await resolveLinuxWindowBounds(base);
+			}
+		} else {
+			bounds =
+				process.platform === "darwin"
+					? getDisplayWorkAreaForSource(base)
+					: getDisplayBoundsForSource(base);
+		}
+
+		if (bounds && bounds.width > 0 && bounds.height > 0) {
+			return bounds;
+		}
+	} catch (error) {
+		console.warn("Failed to resolve bounds for the custom region picker:", error);
+	}
+
+	return fallback;
+}
+
+/**
+ * Clears a region selection once its recording finished so the next take
+ * starts from the plain screen/window source.
+ */
+export function resetCustomRegionSelection() {
+	const current = selectedSource;
+	if (current?.sourceType !== "custom-region") {
+		return;
+	}
+
+	const name =
+		typeof current.name === "string" && current.name.endsWith(CUSTOM_REGION_NAME_SUFFIX)
+			? current.name.slice(0, -CUSTOM_REGION_NAME_SUFFIX.length)
+			: current.name;
+	const resolvedId =
+		typeof current.baseSourceId === "string" ? current.baseSourceId : current.id;
+
+	setSelectedSource({
+		...current,
+		id: resolvedId,
+		name,
+		sourceType: resolvedId?.startsWith("window:") ? "window" : "screen",
+		baseSourceId: undefined,
+		captureRegion: undefined,
+	});
+	broadcastSelectedSourceChange();
 }
 
 export async function bringSelectedWindowForward(
@@ -114,10 +201,12 @@ export function registerSourceHandlers({
 	createEditorWindow,
 	createSourceSelectorWindow,
 	getSourceSelectorWindow,
+	openRegionPicker,
 }: {
 	createEditorWindow: () => void;
 	createSourceSelectorWindow: () => BrowserWindow;
 	getSourceSelectorWindow: () => BrowserWindow | null;
+	openRegionPicker: (bounds: PixelRect) => Promise<PixelRect | null>;
 }) {
 	ipcMain.handle("get-sources", async (_, opts) => {
 		const cacheKey = JSON.stringify({
@@ -379,6 +468,37 @@ export function registerSourceHandlers({
 			};
 			return result;
 		}
+	});
+
+	ipcMain.handle("pick-custom-region", async () => {
+		const base = resolveRegionBaseSource();
+		const bounds = await resolveRegionBaseBounds(base);
+		const selection = await openRegionPicker(bounds);
+		if (!selection) {
+			return null;
+		}
+
+		const region = sanitizeCaptureRegion({
+			x: selection.x / bounds.width,
+			y: selection.y / bounds.height,
+			width: selection.width / bounds.width,
+			height: selection.height / bounds.height,
+		});
+		if (!region) {
+			return null;
+		}
+
+		return {
+			...base,
+			name: `${base.name}${CUSTOM_REGION_NAME_SUFFIX}`,
+			originalName: base.originalName ?? base.name,
+			display_id: base.display_id ?? String(getScreen().getPrimaryDisplay().id),
+			thumbnail: base.thumbnail ?? null,
+			appIcon: base.appIcon ?? null,
+			sourceType: "custom-region" as const,
+			baseSourceId: base.id,
+			captureRegion: region,
+		};
 	});
 
 	ipcMain.handle("select-source", async (_, source: SelectedSource) => {

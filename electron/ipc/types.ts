@@ -2,7 +2,14 @@ export type SelectedSource = {
 	id?: string;
 	name: string;
 	display_id?: string;
-	sourceType?: "screen" | "window";
+	sourceType?: "screen" | "window" | "custom-region";
+	baseSourceId?: string;
+	captureRegion?: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	};
 	appName?: string;
 	windowTitle?: string;
 	[key: string]: unknown;

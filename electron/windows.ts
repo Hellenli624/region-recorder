@@ -1028,6 +1028,64 @@ export function createSourceSelectorWindow(): BrowserWindow {
 	return win;
 }
 
+export function createRegionPickerWindow(bounds: {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}): BrowserWindow {
+	const win = new BrowserWindow({
+		width: Math.max(1, Math.round(bounds.width)),
+		height: Math.max(1, Math.round(bounds.height)),
+		x: Math.round(bounds.x),
+		y: Math.round(bounds.y),
+		frame: false,
+		resizable: false,
+		movable: false,
+		minimizable: false,
+		maximizable: false,
+		fullscreenable: false,
+		skipTaskbar: true,
+		hasShadow: false,
+		alwaysOnTop: true,
+		transparent: true,
+		show: false,
+		backgroundColor: "#00000000",
+		webPreferences: {
+			preload: path.join(electronWindowsDir, "preload.mjs"),
+			nodeIntegration: false,
+			contextIsolation: true,
+		},
+	});
+
+	win.webContents.on("did-finish-load", () => {
+		setTimeout(() => {
+			if (!win.isDestroyed()) {
+				win.show();
+				win.focus();
+			}
+		}, 100);
+	});
+
+	win.setAlwaysOnTop(true, "screen-saver");
+	if (process.platform === "darwin") {
+		win.setVisibleOnAllWorkspaces(true, {
+			visibleOnFullScreen: true,
+			skipTransformProcessType: true,
+		});
+	}
+
+	if (VITE_DEV_SERVER_URL) {
+		win.loadURL(VITE_DEV_SERVER_URL + "?windowType=region-picker");
+	} else {
+		win.loadFile(path.join(RENDERER_DIST, "index.html"), {
+			query: { windowType: "region-picker" },
+		});
+	}
+
+	return win;
+}
+
 export function createCountdownWindow(): BrowserWindow {
 	const primaryDisplay = getScreen().getPrimaryDisplay();
 	const { width, height } = primaryDisplay.workAreaSize;

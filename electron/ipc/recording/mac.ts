@@ -32,6 +32,7 @@ import {
 import { emitRecordingInterrupted } from "./events";
 import { getFinalMacCompanionAudioPath } from "./macCompanionAudio";
 import { pruneAutoRecordings } from "./prune";
+import { applyPendingRegionCrop, endRegionCapture } from "./regionSession";
 
 export function waitForNativeCaptureStart(process: ChildProcessWithoutNullStreams) {
 	return new Promise<void>((resolve, reject) => {
@@ -262,6 +263,10 @@ export async function finalizeStoredVideo(videoPath: string) {
 		throw error;
 	}
 
+	// Region recordings capture the base screen/window and crop the finished
+	// take down to the selected rectangle.
+	await applyPendingRegionCrop(videoPath);
+
 	snapshotCursorTelemetryForPersistence();
 	setCurrentVideoPath(videoPath);
 	setCurrentProjectPath(null);
@@ -297,6 +302,8 @@ export async function finalizeStoredVideo(videoPath: string) {
 			fileSizeBytes: validation.fileSizeBytes,
 		});
 	}
+
+	endRegionCapture();
 
 	return {
 		success: true,

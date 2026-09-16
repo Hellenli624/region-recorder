@@ -48,6 +48,7 @@ import {
 import {
 	createEditorWindow,
 	createHudOverlayWindow,
+	createRegionPickerWindow,
 	createSourceSelectorWindow,
 	getHudOverlayWindow,
 	getUpdateToastWindow,
@@ -172,6 +173,7 @@ function isHudWebContents(webContents: Electron.WebContents | null): boolean {
 // Window references
 let mainWindow: BrowserWindow | null = null;
 let sourceSelectorWindow: BrowserWindow | null = null;
+let regionPickerWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let trayContextMenu: Menu | null = null;
 let selectedSourceName = "";
@@ -861,6 +863,74 @@ function createSourceSelectorWindowWrapper() {
 	return sourceSelectorWindow;
 }
 
+type RegionSelectionRect = { x: number; y: number; width: number; height: number };
+
+let regionPickerResolver: ((rect: RegionSelectionRect | null) => void) | null = null;
+
+function settleRegionPicker(rect: RegionSelectionRect | null) {
+	const resolve = regionPickerResolver;
+	regionPickerResolver = null;
+
+	const win = regionPickerWindow;
+	regionPickerWindow = null;
+	if (win && !win.isDestroyed()) {
+		win.close();
+	}
+
+	resolve?.(rect);
+}
+
+function sanitizeRegionSelection(value: unknown): RegionSelectionRect | null {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const raw = value as Partial<RegionSelectionRect>;
+	const entries = [raw.x, raw.y, raw.width, raw.height];
+	if (!entries.every((entry) => typeof entry === "number" && Number.isFinite(entry))) {
+		return null;
+	}
+
+	const rect = raw as RegionSelectionRect;
+	if (rect.width < 2 || rect.height < 2) {
+		return null;
+	}
+
+	return rect;
+}
+
+/** Shows the full-screen overlay and resolves with the drawn rectangle. */
+function openRegionPicker(bounds: RegionSelectionRect): Promise<RegionSelectionRect | null> {
+	// Never stack pickers: a stale overlay resolves as "cancelled" instead.
+	settleRegionPicker(null);
+
+	const win = createRegionPickerWindow(bounds);
+	regionPickerWindow = win;
+	win.on("closed", () => {
+		if (regionPickerWindow !== win) {
+			// A newer picker already took over; this overlay is stale.
+			return;
+		}
+		regionPickerWindow = null;
+		const resolve = regionPickerResolver;
+		regionPickerResolver = null;
+		resolve?.(null);
+	});
+
+	return new Promise<RegionSelectionRect | null>((resolve) => {
+		regionPickerResolver = resolve;
+	});
+}
+
+function registerRegionPickerHandlers() {
+	ipcMain.on("confirm-custom-region", (_event, rect: unknown) => {
+		settleRegionPicker(sanitizeRegionSelection(rect));
+	});
+	ipcMain.on("cancel-custom-region", () => {
+		settleRegionPicker(null);
+	});
+}
+
 // On macOS, applications and their menu bar stay active until the user quits
 // explicitly with Cmd + Q.
 app.on("before-quit", () => {
@@ -1014,7 +1084,10 @@ app.whenReady().then(async () => {
 				restoreWindowSafely(mainWindow);
 			}
 		},
+		openRegionPicker,
 	);
+
+	registerRegionPickerHandlers();
 
 	if (IS_SMOKE_EXPORT || process.env.RECORDLY_DEV_OPEN_RECORDING_INPUT) {
 		await logSmokeExportGpuDiagnostics();

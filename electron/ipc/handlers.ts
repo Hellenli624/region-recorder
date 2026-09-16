@@ -8,6 +8,7 @@ import { registerProjectHandlers } from "./register/project";
 import { registerRecordingHandlers } from "./register/recording";
 import { registerSettingsHandlers } from "./register/settings";
 import { registerSourceHandlers } from "./register/sources";
+import type { PixelRect } from "./recording/regionCrop";
 import {
 	selectedSource,
 	setNativeScreenRecordingActive,
@@ -57,11 +58,13 @@ export function registerIpcHandlers(
 	_getMainWindow: () => BrowserWindow | null,
 	getSourceSelectorWindow: () => BrowserWindow | null,
 	onRecordingStateChange?: (recording: boolean, sourceName: string) => void,
+	openRegionPicker?: (bounds: PixelRect) => Promise<PixelRect | null>,
 ) {
 	registerSourceHandlers({
 		createEditorWindow,
 		createSourceSelectorWindow,
 		getSourceSelectorWindow,
+		openRegionPicker: openRegionPicker ?? (async () => null),
 	});
 	registerRecordingHandlers(onRecordingStateChange);
 	registerPermissionHandlers();
