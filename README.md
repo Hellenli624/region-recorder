@@ -1,5 +1,12 @@
 Language: EN | [简中](README.zh-CN.md)
 
+> **Fork notice:** This repository is a modified copy of
+> [Recordly](https://github.com/webadderallorg/Recordly) by webadderallorg, published under the same
+> AGPLv3 license (see [LICENSE.md](LICENSE.md)). The changes here are **not** part of the upstream
+> project: a drag-to-select recording region that crops the take on stop, markers on the timeline for
+> the ranges that were cut out, and a tuned webcam bubble shadow. All credit for the original project
+> goes to the Recordly authors; the Recordly name and branding are not used as the name of this fork.
+
 <p align="center">
   <img width="220" alt="Recordly Logo" src="https://github.com/user-attachments/assets/414b8838-6731-45d4-a815-6e3c0aa1fe52" />
 </p>

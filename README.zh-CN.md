@@ -1,5 +1,11 @@
 语言: [EN](README.md) | 简中
 
+> **Fork 说明：** 本仓库是 [Recordly](https://github.com/webadderallorg/Recordly)（作者
+> webadderallorg）的修改版，同样以 AGPLv3 授权发布（见 [LICENSE.md](LICENSE.md)）。以下改动**不属于**
+> 上游项目：鼠标拖拽框选录制区域（停止录制时按选区裁剪）、在时间线上标出被剪掉的区间、以及调整过的
+> 摄像头气泡阴影。原项目的所有功劳归 Recordly 作者所有；本 Fork 没有把 Recordly 的名称与品牌当作
+> 自己项目的名称。
+
 <p align="center">
   <img width="220" alt="Recordly logo" src="https://github.com/user-attachments/assets/082bb4b0-5fc5-4e9f-abda-55611fd6aded" />
 </p>
