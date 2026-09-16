@@ -4,6 +4,7 @@ import type {
 	AudioRegion,
 	CaptionCue,
 	ClipRegion,
+	TrimRegion,
 	ZoomRegion,
 } from "../../types";
 import { CAPTION_ROW_ID, CLIP_ROW_ID, ZOOM_ROW_ID } from "../core/constants";
@@ -45,11 +46,19 @@ function getCaptionLabel(cue: CaptionCue): string {
 export function buildTimelineItems(params: {
 	zoomRegions: ZoomRegion[];
 	clipRegions: ClipRegion[];
+	trimRegions?: TrimRegion[];
 	annotationRegions: AnnotationRegion[];
 	audioRegions: AudioRegion[];
 	captionCues?: CaptionCue[];
 }): TimelineRenderItem[] {
-	const { zoomRegions, clipRegions, annotationRegions, audioRegions, captionCues = [] } = params;
+	const {
+		zoomRegions,
+		clipRegions,
+		trimRegions = [],
+		annotationRegions,
+		audioRegions,
+		captionCues = [],
+	} = params;
 	const zooms: TimelineRenderItem[] = zoomRegions.map((region, index) => ({
 		id: region.id,
 		rowId: ZOOM_ROW_ID,
@@ -106,7 +115,17 @@ export function buildTimelineItems(params: {
 		variant: "caption",
 	}));
 
-	return [...zooms, ...clips, ...annotations, ...audios, ...captions];
+	// Removed ranges are derived from the clips; render them as inert markers in
+	// the clip lane so a cut-out section is visible instead of an empty gap.
+	const trims: TimelineRenderItem[] = trimRegions.map((region, index) => ({
+		id: region.id,
+		rowId: CLIP_ROW_ID,
+		span: { start: region.startMs, end: region.endMs },
+		label: `Trim ${index + 1}`,
+		variant: "trim",
+	}));
+
+	return [...zooms, ...clips, ...trims, ...annotations, ...audios, ...captions];
 }
 
 export function buildAllRegionSpans(params: {

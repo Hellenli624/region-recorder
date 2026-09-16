@@ -178,7 +178,8 @@ export default function Item({
 				<div
 					className={cn(
 						glassClass,
-						"w-full overflow-hidden flex items-center justify-center gap-1.5 cursor-grab active:cursor-grabbing relative",
+						"w-full overflow-hidden flex items-center justify-center gap-1.5 relative",
+						disabled ? "cursor-default" : "cursor-grab active:cursor-grabbing",
 						isSelected && glassStyles.selected,
 					)}
 					style={{
@@ -190,16 +191,20 @@ export default function Item({
 						event.stopPropagation();
 					}}
 				>
-					<div
-						className={cn(glassStyles.zoomEndCap, glassStyles.left)}
-						style={{ cursor: "col-resize", pointerEvents: "auto" }}
-						title="Resize left"
-					/>
-					<div
-						className={cn(glassStyles.zoomEndCap, glassStyles.right)}
-						style={{ cursor: "col-resize", pointerEvents: "auto" }}
-						title="Resize right"
-					/>
+					{!disabled && (
+						<>
+							<div
+								className={cn(glassStyles.zoomEndCap, glassStyles.left)}
+								style={{ cursor: "col-resize", pointerEvents: "auto" }}
+								title="Resize left"
+							/>
+							<div
+								className={cn(glassStyles.zoomEndCap, glassStyles.right)}
+								style={{ cursor: "col-resize", pointerEvents: "auto" }}
+								title="Resize right"
+							/>
+						</>
+					)}
 					{showAudioWaveform && waveformPeaks && (
 						<AudioWaveform
 							peaks={waveformPeaks}

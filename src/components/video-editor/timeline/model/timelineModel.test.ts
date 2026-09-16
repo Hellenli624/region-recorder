@@ -74,6 +74,27 @@ describe("timeline model", () => {
 		});
 	});
 
+	it("renders removed ranges as trim markers in the clip lane", () => {
+		const items = buildTimelineItems({
+			zoomRegions: [],
+			clipRegions: [
+				{ id: "c1", startMs: 0, endMs: 1000, speed: 1 },
+				{ id: "c2", startMs: 3000, endMs: 5000, speed: 1 },
+			],
+			trimRegions: [{ id: "trim-gap-1", startMs: 1000, endMs: 3000 }],
+			annotationRegions: [],
+			audioRegions: [],
+		});
+
+		expect(items.filter((item) => item.variant === "clip")).toHaveLength(2);
+		expect(items.find((item) => item.variant === "trim")).toMatchObject({
+			id: "trim-gap-1",
+			rowId: "row-clip",
+			span: { start: 1000, end: 3000 },
+			label: "Trim 1",
+		});
+	});
+
 	it("builds all variant labels for annotation and audio", () => {
 		expect(getAnnotationLabel({ ...BASE_ANNOTATION, type: "text", content: "   " })).toBe(
 			"Empty text",

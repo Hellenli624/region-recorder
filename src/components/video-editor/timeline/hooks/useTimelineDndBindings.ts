@@ -145,11 +145,12 @@ export function useTimelineDndBindings({
 			buildTimelineItems({
 				zoomRegions,
 				clipRegions,
+				trimRegions,
 				annotationRegions,
 				audioRegions,
 				captionCues,
 			}),
-		[zoomRegions, clipRegions, annotationRegions, audioRegions, captionCues],
+		[zoomRegions, clipRegions, trimRegions, annotationRegions, audioRegions, captionCues],
 	);
 
 	const allRegionSpans = useMemo(

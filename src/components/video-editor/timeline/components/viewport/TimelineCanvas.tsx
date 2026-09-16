@@ -539,20 +539,35 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 		<>
 			<Row id={CLIP_ROW_ID} isEmpty={clipItems.length === 0} hint={HINT_CLIP}>
 				<ClipMarkerOverlay videoDurationMs={videoDurationMs} />
-				{clipItems.map((item) => (
-					<Item
-						id={item.id}
-						key={item.id}
-						rowId={item.rowId}
-						span={item.span}
-						isSelected={item.id === selectedClipId}
-						onSelectId={onSelectClip}
-						variant="clip"
-						speedValue={item.speedValue}
-					>
-						{item.label}
-					</Item>
-				))}
+				{clipItems.map((item) =>
+					item.variant === "trim" ? (
+						// Removed ranges are markers only: they must never be dragged,
+						// resized or selected, because they are derived from the clips.
+						<Item
+							id={item.id}
+							key={item.id}
+							rowId={item.rowId}
+							span={item.span}
+							variant="trim"
+							disabled
+						>
+							{item.label}
+						</Item>
+					) : (
+						<Item
+							id={item.id}
+							key={item.id}
+							rowId={item.rowId}
+							span={item.span}
+							isSelected={item.id === selectedClipId}
+							onSelectId={onSelectClip}
+							variant="clip"
+							speedValue={item.speedValue}
+						>
+							{item.label}
+						</Item>
+					),
+				)}
 			</Row>
 			{showSourceAudioTrack &&
 				sourceAudioTracks.map((track) => (
